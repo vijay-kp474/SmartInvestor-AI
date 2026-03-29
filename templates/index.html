@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartInvestor AI — India's Trading Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- Ambient background orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ── HEADER ─────────────────────────── -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">⬡</span>
+    <span class="logo-text">SmartInvestor<span class="accent">AI</span></span>
+  </div>
+  <nav class="tabs">
+    <button class="tab active" onclick="switchTab('analyze')">Analyze</button>
+    <button class="tab" onclick="switchTab('portfolio')">Portfolio</button>
+    <button class="tab" onclick="switchTab('chat')">AI Chat</button>
+  </nav>
+  <div class="market-pill" id="marketStatus">🟢 NSE Live</div>
+</header>
+
+<!-- ── HERO ───────────────────────────── -->
+<section class="hero">
+  <p class="hero-eyebrow">India's #1 AI Trading Intelligence</p>
+  <h1 class="hero-title">
+    Turn Market Data<br>
+    Into <span class="gradient-text">Smart Decisions</span>
+  </h1>
+  <p class="hero-sub" id="tagline"></p>
+</section>
+
+<!-- ════════════════════════════════════ -->
+<!--  TAB: ANALYZE                        -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-panel active" id="panel-analyze">
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input list="stockList" id="stockInput" placeholder="Enter NSE symbol  e.g. TCS, INFY, RELIANCE">
+      <button class="btn-primary" onclick="analyzeStock()">
+        <span>Analyze</span> <span class="btn-arrow">→</span>
+      </button>
+    </div>
+    <datalist id="stockList">
+      <option value="RELIANCE"><option value="TCS"><option value="HDFCBANK">
+      <option value="INFY"><option value="ICICIBANK"><option value="HINDUNILVR">
+      <option value="SBIN"><option value="BHARTIARTL"><option value="KOTAKBANK">
+      <option value="LT"><option value="AXISBANK"><option value="ASIANPAINT">
+      <option value="MARUTI"><option value="SUNPHARMA"><option value="TITAN">
+      <option value="WIPRO"><option value="ONGC"><option value="NTPC">
+      <option value="HCLTECH"><option value="BAJFINANCE"><option value="ADANIENT">
+      <option value="JSWSTEEL"><option value="TATASTEEL"><option value="DRREDDY">
+      <option value="CIPLA"><option value="HEROMOTOCO"><option value="APOLLOHOSP">
+    </datalist>
+  </div>
+
+  <!-- Loading state -->
+  <div id="loadingState" class="loading-state hidden">
+    <div class="spinner"></div>
+    <p>Fetching market data & running AI analysis…</p>
+  </div>
+
+  <!-- Results Grid -->
+  <div id="resultGrid" class="result-grid hidden">
+
+    <!-- Signal Card -->
+    <div class="card card-signal" id="signalCard">
+      <div class="card-label">AI Signal</div>
+      <div class="signal-badge" id="signalBadge">—</div>
+      <div class="signal-score" id="signalScore"></div>
+      <div class="card-label" style="margin-top:12px">Trend</div>
+      <div class="trend-text" id="trendText">—</div>
+    </div>
+
+    <!-- Price Card -->
+    <div class="card card-price">
+      <div class="card-label">Current Price</div>
+      <div class="price-big" id="priceDisplay">—</div>
+      <div class="metrics-row">
+        <div class="metric">
+          <span class="metric-label">MA20</span>
+          <span class="metric-val" id="ma20Display">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">MA50</span>
+          <span class="metric-val" id="ma50Display">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">RSI</span>
+          <span class="metric-val" id="rsiDisplay">—</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">MACD</span>
+          <span class="metric-val" id="macdDisplay">—</span>
+        </div>
+      </div>
+      <div id="volSpike" class="vol-spike hidden">⚡ Volume Spike Detected</div>
+    </div>
+
+    <!-- AI Insight Card -->
+    <div class="card card-insight">
+      <div class="card-label">🤖 AI Insight</div>
+      <p id="aiInsight" class="insight-text">—</p>
+    </div>
+
+    <!-- Patterns Card -->
+    <div class="card card-patterns">
+      <div class="card-label">📐 Chart Patterns Detected</div>
+      <div id="patternList" class="pattern-list"></div>
+    </div>
+
+    <!-- Key Reasons -->
+    <div class="card card-reasons">
+      <div class="card-label">📋 Signal Reasons</div>
+      <ul id="reasonsList" class="reasons-list"></ul>
+    </div>
+
+    <!-- Bollinger Bands info -->
+    <div class="card card-bb">
+      <div class="card-label">📊 Bollinger Bands</div>
+      <div class="bb-row">
+        <div class="bb-item">
+          <span class="bb-label">Upper</span>
+          <span class="bb-val" id="bbUpper">—</span>
+        </div>
+        <div class="bb-item">
+          <span class="bb-label">Lower</span>
+          <span class="bb-val" id="bbLower">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /result-grid -->
+
+  <!-- Chart -->
+  <div id="chartWrap" class="chart-wrap hidden">
+    <div class="chart-header">
+      <span class="chart-title" id="chartTitle">Price Chart</span>
+      <div class="chart-btns">
+        <button class="chart-btn active" onclick="setChartType('price',this)">Price</button>
+        <button class="chart-btn" onclick="setChartType('bb',this)">Bollinger</button>
+        <button class="chart-btn" onclick="setChartType('volume',this)">Volume</button>
+      </div>
+    </div>
+    <canvas id="stockChart"></canvas>
+  </div>
+
+</div><!-- /panel-analyze -->
+
+<!-- ════════════════════════════════════ -->
+<!--  TAB: PORTFOLIO                      -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-panel" id="panel-portfolio">
+  <div class="portfolio-header">
+    <h2>Portfolio Tracker</h2>
+    <p>Add up to 8 NSE stocks to compare signals side by side</p>
+  </div>
+  <div class="portfolio-input-row">
+    <input id="portfolioInput" placeholder="RELIANCE, TCS, INFY, HDFCBANK …">
+    <button class="btn-primary" onclick="analyzePortfolio()">
+      Track Portfolio →
+    </button>
+  </div>
+  <div id="portfolioLoading" class="loading-state hidden">
+    <div class="spinner"></div><p>Analyzing your portfolio…</p>
+  </div>
+  <div id="portfolioGrid" class="portfolio-grid"></div>
+</div>
+
+<!-- ════════════════════════════════════ -->
+<!--  TAB: AI CHAT                        -->
+<!-- ════════════════════════════════════ -->
+<div class="tab-panel" id="panel-chat">
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="ai-avatar">AI</div>
+      <div>
+        <div class="chat-name">SmartInvestor AI</div>
+        <div class="chat-subtitle">Ask anything about Indian markets</div>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg ai-msg">
+        <div class="msg-bubble">
+          👋 Namaste! I'm your AI market analyst. Ask me anything — 
+          "Should I buy TCS now?", "What's the outlook for IT sector?", 
+          "Explain RSI in simple terms", or "Best SIP strategy for 2025?"
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Ask about stocks, sectors, strategies…"
+             onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="btn-send" onclick="sendMessage()">↑</button>
+    </div>
+
+    <div class="quick-prompts">
+      <button class="qp" onclick="quickPrompt('Should I buy TCS right now?')">Buy TCS?</button>
+      <button class="qp" onclick="quickPrompt('What is RSI and how to use it?')">Explain RSI</button>
+      <button class="qp" onclick="quickPrompt('Best stocks in Nifty 50 for long term?')">Nifty 50 picks</button>
+      <button class="qp" onclick="quickPrompt('How do FII and DII flows affect stock prices?')">FII/DII flows</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ─────────────────────────── -->
+<footer>
+  <p>SmartInvestor AI · Built for India's 14 crore+ retail investors · Not financial advice</p>
+</footer>
+
+<script>
+// ─── State ────────────────────────────
+let chart = null;
+let currentData = null;
+
+// ─── Typing effect ────────────────────
+const phrases = [
+  "AI-powered technical analysis for NSE stocks",
+  "Pattern detection · RSI · MACD · Bollinger Bands",
+  "From data to decision in seconds"
+];
+let pi = 0, ci = 0, deleting = false;
+function typeLoop() {
+  const el = document.getElementById("tagline");
+  const phrase = phrases[pi];
+  if (!deleting) {
+    el.textContent = phrase.slice(0, ++ci);
+    if (ci === phrase.length) { deleting = true; setTimeout(typeLoop, 1800); return; }
+  } else {
+    el.textContent = phrase.slice(0, --ci);
+    if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+  }
+  setTimeout(typeLoop, deleting ? 30 : 55);
+}
+typeLoop();
+
+// ─── Tab switching ────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+// ─── Chart helpers ────────────────────
+let chartMode = 'price';
+function setChartType(mode, btn) {
+  chartMode = mode;
+  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (currentData) renderChart(currentData);
+}
+
+function renderChart(data) {
+  const ctx = document.getElementById('stockChart').getContext('2d');
+  if (chart) chart.destroy();
+
+  const green = '#22d3a5', red = '#f87171', amber = '#fbbf24', blue = '#60a5fa';
+
+  if (chartMode === 'volume') {
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: data.dates,
+        datasets: [{
+          label: 'Volume',
+          data: data.volumes,
+          backgroundColor: data.volumes.map((v, i) =>
+            i > 0 && data.prices[i] >= data.prices[i-1] ? green + 'aa' : red + 'aa'
+          )
+        }]
+      },
+      options: chartOptions('Volume')
+    });
+  } else if (chartMode === 'bb') {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.dates,
+        datasets: [
+          { label: 'Price', data: data.prices, borderColor: green, borderWidth: 2, pointRadius: 0, tension: 0.3 },
+          { label: 'BB Upper', data: data.bb_upper_line, borderColor: amber, borderWidth: 1, borderDash: [4,4], pointRadius: 0, tension: 0.3, fill: false },
+          { label: 'BB Lower', data: data.bb_lower_line, borderColor: amber, borderWidth: 1, borderDash: [4,4], pointRadius: 0, tension: 0.3, fill: '-1', backgroundColor: amber + '18' },
+        ]
+      },
+      options: chartOptions('Bollinger Bands')
+    });
+  } else {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.dates,
+        datasets: [
+          { label: 'Price', data: data.prices, borderColor: green, borderWidth: 2.5, pointRadius: 0, tension: 0.3, fill: true, backgroundColor: green + '15' },
+          { label: 'MA20', data: data.ma20_line, borderColor: blue, borderWidth: 1.5, borderDash: [5,3], pointRadius: 0, tension: 0.3 }
+        ]
+      },
+      options: chartOptions('Stock Price')
+    });
+  }
+}
+
+function chartOptions(label) {
+  return {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'DM Mono' } } } },
+    scales: {
+      x: { ticks: { color: '#64748b', maxTicksLimit: 8, font: { family: 'DM Mono', size: 10 } }, grid: { color: '#ffffff08' } },
+      y: { ticks: { color: '#64748b', font: { family: 'DM Mono', size: 10 } }, grid: { color: '#ffffff08' } }
+    }
+  };
+}
+
+// ─── Analyze stock ────────────────────
+async function analyzeStock() {
+  const symbol = document.getElementById('stockInput').value.trim();
+  if (!symbol) return;
+
+  show('loadingState'); hide('resultGrid'); hide('chartWrap');
+
+  const res  = await fetch('/analyze', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ symbol })
+  });
+  const data = await res.json();
+  currentData = data;
+
+  hide('loadingState');
+
+  if (data.error) { alert(data.error); return; }
+
+  // Signal badge
+  const badge = document.getElementById('signalBadge');
+  badge.textContent = data.signal;
+  badge.className = 'signal-badge';
+  if (data.signal.includes('BUY')) badge.classList.add('buy');
+  else if (data.signal.includes('RISK')) badge.classList.add('risk');
+  else badge.classList.add('wait');
+
+  document.getElementById('signalScore').textContent = `Score: ${data.score > 0 ? '+' : ''}${data.score}`;
+  document.getElementById('trendText').textContent = data.trend;
+
+  // Price metrics
+  document.getElementById('priceDisplay').textContent = `₹${data.price}`;
+  document.getElementById('ma20Display').textContent  = data.ma20 !== null ? `₹${data.ma20}` : 'N/A';
+  document.getElementById('ma50Display').textContent  = data.ma50 !== null ? `₹${data.ma50}` : 'N/A';
+  document.getElementById('rsiDisplay').textContent   = data.rsi !== null ? data.rsi : 'N/A';
+  document.getElementById('macdDisplay').textContent  = data.macd !== null ? data.macd : 'N/A';
+
+  // Volume spike
+  const vs = document.getElementById('volSpike');
+  data.vol_spike ? vs.classList.remove('hidden') : vs.classList.add('hidden');
+
+  // AI insight
+  document.getElementById('aiInsight').textContent = data.explanation || '—';
+
+  // Patterns
+  const pl = document.getElementById('patternList');
+  pl.innerHTML = data.patterns.length
+    ? data.patterns.map(p =>
+        `<div class="pattern-tag ${p.type}">
+          <strong>${p.name}</strong>
+          <span>${p.desc}</span>
+        </div>`).join('')
+    : '<p style="color:#64748b">No strong patterns detected</p>';
+
+  // Reasons
+  const rl = document.getElementById('reasonsList');
+  rl.innerHTML = data.reasons.map(r => `<li>${r}</li>`).join('') || '<li>General trend analysis</li>';
+
+  // BB
+  document.getElementById('bbUpper').textContent = data.bb_upper !== null ? `₹${data.bb_upper}` : 'N/A';
+  document.getElementById('bbLower').textContent = data.bb_lower !== null ? `₹${data.bb_lower}` : 'N/A';
+
+  // Chart title
+  document.getElementById('chartTitle').textContent = `${symbol.toUpperCase()} — 60 Day Price`;
+
+  show('resultGrid'); show('chartWrap');
+  renderChart(data);
+}
+
+// ─── Portfolio ────────────────────────
+async function analyzePortfolio() {
+  const raw     = document.getElementById('portfolioInput').value;
+  const symbols = raw.split(',').map(s => s.trim()).filter(Boolean);
+  if (!symbols.length) return;
+
+  show('portfolioLoading');
+  document.getElementById('portfolioGrid').innerHTML = '';
+
+  const res  = await fetch('/portfolio', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ symbols })
+  });
+  const data = await res.json();
+
+  hide('portfolioLoading');
+
+  const grid = document.getElementById('portfolioGrid');
+  grid.innerHTML = data.portfolio.map(s => {
+    const cls = s.signal.includes('BUY') ? 'buy' : s.signal.includes('RISK') ? 'risk' : 'wait';
+    return `
+      <div class="port-card">
+        <div class="port-symbol">${s.symbol}</div>
+        <div class="port-price">₹${s.price}</div>
+        <div class="port-signal ${cls}">${s.signal}</div>
+        <div class="port-metrics">
+          <span>RSI ${s.rsi !== null ? s.rsi : 'N/A'}</span>
+          <span>MA20 ${s.ma20 !== null ? '₹' + s.ma20 : 'N/A'}</span>
+        </div>
+        <div class="port-trend">${s.trend}</div>
+        ${s.patterns.length ? `<div class="port-pattern">${s.patterns[0].name}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ─── Chat ─────────────────────────────
+function quickPrompt(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const input   = document.getElementById('chatInput');
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = '';
+
+  const msgs = document.getElementById('chatMessages');
+
+  // User bubble
+  msgs.innerHTML += `<div class="msg user-msg"><div class="msg-bubble">${message}</div></div>`;
+
+  // Thinking bubble
+  const thinkId = 'think-' + Date.now();
+  msgs.innerHTML += `<div class="msg ai-msg" id="${thinkId}"><div class="msg-bubble thinking">Thinking<span class="dots">...</span></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const res  = await fetch('/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ message })
+  });
+  const data = await res.json();
+
+  document.getElementById(thinkId).outerHTML =
+    `<div class="msg ai-msg"><div class="msg-bubble">${data.reply}</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ─── Utilities ────────────────────────
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+</script>
+</body>
+</html>
